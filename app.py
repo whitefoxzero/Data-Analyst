@@ -267,23 +267,25 @@ st.divider()
 # -----------------------------------------------------------------------------
 st.subheader("👤 Athlete Profile Explorer")
 
-# กัน NaN และแปลงเป็น string
-all_athlete_names = sorted(df['Name'].dropna().astype(str).unique())
-
 search_text = st.text_input("Search Athlete Name:")
 
 if search_text:
-    filtered_names = [
-        name for name in all_athlete_names
-        if search_text.lower() in name.lower()
-    ]
-else:
-    filtered_names = []
+    filtered_names = (
+        df['Name']
+        .dropna()
+        .astype(str)
+        .loc[lambda x: x.str.contains(search_text, case=False, na=False)]
+        .unique()
+    )
 
-selected_athlete = st.selectbox(
-    "Select Athlete:",
-    options=[""] + filtered_names[:10]
-)
+    selected_athlete = st.selectbox(
+        "Select Athlete:",
+        options=[""] + list(filtered_names[:10])
+    )
+
+else:
+    st.info("🔎 Type a name to search for an athlete")
+    selected_athlete = None
 
 if selected_athlete:
     ath_df = df[df['Name'] == selected_athlete]
