@@ -89,10 +89,22 @@ def load_and_clean_data():
         df[existing_cat_cols] = df[existing_cat_cols].astype('category')
 
         # 4. จัดการคอลัมน์ Medal (ตัวแปรเป้าหมายที่สำคัญ)
+        df['Medal'] = df['Medal'].astype(str)
+
+# 2️⃣ ทำความสะอาด
+        df['Medal'] = df['Medal'].str.strip().str.lower()
+
+# 3️⃣ แทนค่าที่ไม่ใช่เหรียญเป็น NaN
+        df['Medal'] = df['Medal'].replace({
+        'no medal': np.nan,
+        '-': np.nan
+        })
+
+# 4️⃣ เติม NaN เป็น 'no medal'
+        df['Medal'] = df['Medal'].fillna('no medal')
+
+# 5️⃣ แปลงเป็น category ตอนสุดท้าย
         df['Medal'] = df['Medal'].astype('category')
-        if 'No Medal' not in df['Medal'].cat.categories:
-            df['Medal'] = df['Medal'].cat.add_categories('No Medal')
-        df['Medal'] = df['Medal'].fillna('No Medal')
 
         # 5. จัดการค่าว่างของ 'region'
         if 'region' in df.columns:
