@@ -79,7 +79,7 @@ def load_and_clean_data():
         # 2. ลบคอลัมน์ที่ไม่จำเป็น (Cleaning)
         if 'notes' in df.columns:
             df = df.drop(columns=['notes'])
-            
+
         if 'Name' in df.columns:
             df = df[df['Name'].str.match(
             r'^[^\W\d_]+(?:[ \.\-][^\W\d_]+)*$', 
@@ -268,7 +268,15 @@ st.divider()
 st.subheader("👤 Athlete Profile Explorer")
 
 all_athlete_names = sorted(df['Name'].unique())
-selected_athlete = st.selectbox("Search Athlete Name:", options=[""] + all_athlete_names)
+search_text = st.text_input("Search Athlete Name:")
+
+filtered_names = [name for name in all_athlete_names 
+                  if search_text.lower() in name.lower()]
+
+selected_athlete = st.selectbox(
+    "Select Athlete:",
+    options=[""] + filtered_names[:10]  # แสดงสูงสุด 10 คน
+)
 
 if selected_athlete:
     ath_df = df[df['Name'] == selected_athlete]
