@@ -169,7 +169,7 @@ if not selected_sports:
     selected_sports = all_sports
 
 # Medal Type Filter
-medal_options = ['Gold', 'Silver', 'Bronze', 'No Medal']
+medal_options = ['gold', 'silver', 'bronze', 'no medal']
 selected_medals = st.sidebar.multiselect(
     "Select Medal Type(s):",
     options=medal_options,
@@ -186,10 +186,10 @@ df_filtered = df[
 
 # Color mapping
 color_map = {
-    'Gold': '#FFD700',      
-    'Silver': '#C0C0C0',    
-    'Bronze': '#CD7F32',    
-    'No Medal': '#E0E0E0'   
+    'gold': '#FFD700',
+    'silver': '#C0C0C0',
+    'bronze': '#CD7F32',
+    'no medal': '#E0E0E0'
 }
 
 # -----------------------------------------------------------------------------
@@ -202,11 +202,11 @@ st.markdown("---")
 # SECTION 1: Medal Overview
 # -----------------------------------------------------------------------------
 st.subheader("📊 Global Medal Overview")
-
-total_gold = df_filtered[df_filtered['Medal'] == 'Gold'].shape[0]
-total_silver = df_filtered[df_filtered['Medal'] == 'Silver'].shape[0]
-total_bronze = df_filtered[df_filtered['Medal'] == 'Bronze'].shape[0]
-total_no_medal = df_filtered[df_filtered['Medal'] == 'No Medal'].shape[0]
+ช
+total_gold = df_filtered[df_filtered['Medal'] == 'gold'].shape[0]
+total_silver = df_filtered[df_filtered['Medal'] == 'silver'].shape[0]
+total_bronze = df_filtered[df_filtered['Medal'] == 'bronze'].shape[0]
+total_no_medal = df_filtered[df_filtered['Medal'] == 'no medal'].shape[0]
 total_athletes = df_filtered['Name'].nunique()
 
 m1, m2, m3, m4, m5 = st.columns(5)
