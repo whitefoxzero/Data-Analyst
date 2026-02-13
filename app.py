@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# 2. State Management (ระบบจัดการหน้า)
+# 2. State Management
 # -----------------------------------------------------------------------------
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 'dashboard'
@@ -29,31 +29,34 @@ def go_to_dashboard():
     st.session_state.current_page = 'dashboard'
 
 # -----------------------------------------------------------------------------
-# 3. UI/UX & Custom CSS (บังคับตัวหนังสือสีดำสนิท)
+# 3. UI/UX & Custom CSS (บังคับ Light Mode & ตัวหนังสือสีดำ)
 # -----------------------------------------------------------------------------
 st.markdown("""
     <style>
-    html, body, [class*="css"], [class*="st-"] { color: #000000 !important; }
-    .stApp { background-color: #F8F9FA; }
-    h1, h2, h3, h4, h5, h6, p, span, label, div { color: #000000 !important; }
+    /* บังคับพื้นหลังหลักและ Sidebar ให้เป็นสีสว่าง (ล้างค่า Dark Mode) */
+    .stApp, .stApp > header { background-color: #F4F6F9 !important; }
+    [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child { background-color: #FFFFFF !important; }
     
-    div[data-testid="stMetric"] {
-        background-color: #FFFFFF;
-        padding: 15px;
-        border-radius: 12px;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.05);
-        border-left: 5px solid #FFD700;
+    /* บังคับตัวหนังสือทุกส่วนให้เป็นสีดำ */
+    html, body, p, span, h1, h2, h3, h4, h5, h6, li, label, div { 
+        color: #000000 !important; 
     }
-    div[data-testid="stMetricLabel"], div[data-testid="stMetricValue"] {
+    
+    /* ตกแต่งกล่อง Metric ให้ดูมีมิติ */
+    div[data-testid="stMetric"] {
+        background-color: #FFFFFF !important;
+        padding: 15px !important;
+        border-radius: 12px !important;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.05) !important;
+        border-left: 5px solid #FFD700 !important;
+    }
+    
+    /* ทำให้ข้อความใน Tabs เห็นชัดเจน */
+    button[data-baseweb="tab"] p {
+        font-size: 18px !important;
+        font-weight: bold !important;
         color: #000000 !important;
     }
-    
-    .stTabs [data-baseweb="tab-list"] { gap: 20px; }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px; font-size: 18px; font-weight: 600; color: #000000 !important;
-    }
-    
-    section[data-testid="stSidebar"] * { color: #000000 !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -113,9 +116,6 @@ color_map = {
 # =============================================================================
 
 if st.session_state.current_page == 'dashboard':
-    # -------------------------------------------------------------------------
-    # PAGE 1: MAIN DASHBOARD
-    # -------------------------------------------------------------------------
     st.sidebar.header("🎯 ตัวกรองข้อมูล (Filters)")
     min_year, max_year = int(df['Year'].min()), int(df['Year'].max())
     year_range = st.sidebar.slider("เลือกช่วงปี:", min_year, max_year, (min_year, max_year))
@@ -134,7 +134,6 @@ if st.session_state.current_page == 'dashboard':
 
     st.title("🏅 Olympic Analytics Dashboard")
     
-    # --- ช่องค้นหานักกีฬา ---
     search_list = df['Name'].dropna().unique()
     selected_search = st.selectbox("🔎 พิมพ์หรือเลือกชื่อนักกีฬาเพื่อดูสถิติเจาะลึก:", options=["-- กรุณาเลือกนักกีฬา --"] + list(search_list))
     if selected_search != "-- กรุณาเลือกนักกีฬา --":
@@ -165,7 +164,8 @@ if st.session_state.current_page == 'dashboard':
         c1, c2 = st.columns(2)
         with c1:
             count_by_year = df_filtered.groupby(['Year', 'Medal']).size().reset_index(name='Count')
-            fig_year = px.bar(count_by_year, x='Year', y='Count', color='Medal', color_discrete_map=color_map, title="สถิติเหรียญรางวัลแบ่งตามปี", barmode='group')
+            # เพิ่ม template="plotly_white" เพื่อบังคับกราฟเป็นโหมดสว่าง
+            fig_year = px.bar(count_by_year, x='Year', y='Count', color='Medal', color_discrete_map=color_map, title="สถิติเหรียญรางวัลแบ่งตามปี", barmode='group', template="plotly_white")
             fig_year.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#000000"))
             st.plotly_chart(fig_year, width="stretch")
 
@@ -173,17 +173,15 @@ if st.session_state.current_page == 'dashboard':
             sport_counts = df_filtered.groupby(['Sport', 'Medal']).size().reset_index(name='Count')
             sport_total = sport_counts.groupby('Sport')['Count'].sum().reset_index().sort_values('Count', ascending=False)
             top_sports = sport_total.head(10)['Sport'].tolist()
-            fig_sport = px.bar(sport_counts[sport_counts['Sport'].isin(top_sports)], x='Sport', y='Count', color='Medal', color_discrete_map=color_map, title="10 กีฬายอดนิยม", category_orders={"Sport": top_sports})
+            # เพิ่ม template="plotly_white"
+            fig_sport = px.bar(sport_counts[sport_counts['Sport'].isin(top_sports)], x='Sport', y='Count', color='Medal', color_discrete_map=color_map, title="10 กีฬายอดนิยม", category_orders={"Sport": top_sports}, template="plotly_white")
             fig_sport.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#000000"))
             st.plotly_chart(fig_sport, width="stretch")
 
     with tab2:
         st.subheader("Top 20 นักกีฬาที่ได้เหรียญมากที่สุด")
-        
-        # กรองเฉพาะคนที่ได้เหรียญ (โดยอิงจาก Filter ด้านข้างเพื่อให้ข้อมูลสัมพันธ์กัน)
         medals_only = df_filtered[df_filtered['Medal'].isin(['gold', 'silver', 'bronze'])]
         
-        # ป้องกัน Error ถ้า Filter ข้อมูลจนไม่เหลือคนได้เหรียญเลย
         if medals_only.empty:
             st.warning("⚠️ ไม่พบข้อมูลการได้เหรียญรางวัลในประเภทกีฬาหรือช่วงเวลาที่คุณเลือก กรุณาปรับตัวกรองใหม่ครับ")
         else:
@@ -191,7 +189,8 @@ if st.session_state.current_page == 'dashboard':
 
             col_rank1, col_rank2 = st.columns([1, 1])
             with col_rank1:
-                fig_rank = px.bar(leaderboard, x='Total Medals', y='Name', orientation='h', title="ทำเนียบนักกีฬา (เหรียญรวม)", color='Total Medals', color_continuous_scale='Viridis')
+                # เพิ่ม template="plotly_white"
+                fig_rank = px.bar(leaderboard, x='Total Medals', y='Name', orientation='h', title="ทำเนียบนักกีฬา (เหรียญรวม)", color='Total Medals', color_continuous_scale='Viridis', template="plotly_white")
                 fig_rank.update_layout(yaxis={'categoryorder':'total ascending'}, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#000000"))
                 st.plotly_chart(fig_rank, width="stretch")
 
@@ -208,15 +207,10 @@ if st.session_state.current_page == 'dashboard':
                 detailed_leaderboard = detailed_leaderboard.sort_values('Total', ascending=False)
                 detailed_leaderboard.columns = ['🥇 Gold', '🥈 Silver', '🥉 Bronze', '🏆 Total'] 
 
-                # ใช้ st.dataframe แบบปกติ เพื่อป้องกันปัญหาจากเวอร์ชันของ Streamlit
                 st.dataframe(detailed_leaderboard, use_container_width=True)
-                
                 st.info("💡 หากต้องการดูสถิติเจาะลึกของนักกีฬาในตารางนี้ สามารถพิมพ์ชื่อในช่องค้นหาด้านบนได้เลยครับ")
 
 elif st.session_state.current_page == 'athlete_profile':
-    # -------------------------------------------------------------------------
-    # PAGE 2: ATHLETE PROFILE PAGE
-    # -------------------------------------------------------------------------
     col_back, col_space = st.columns([1, 5])
     with col_back:
         if st.button("🔙 กลับไปหน้าหลัก", use_container_width=True):
@@ -263,10 +257,12 @@ elif st.session_state.current_page == 'athlete_profile':
     plot_df['Medal_Rank'] = plot_df['Medal'].map({'gold': 1, 'silver': 2, 'bronze': 3, 'no medal': 4})
     plot_df = plot_df.sort_values(by=['Medal_Rank'], ascending=False)
     
+    # เพิ่ม template="plotly_white"
     fig_ath = px.scatter(
         plot_df, x='Year', y='Sport', color='Medal', size='Marker_Size',
         hover_name='Event', hover_data={'Year': True, 'Sport': False, 'City': True, 'Marker_Size': False, 'Medal_Rank': False},
-        color_discrete_map=color_map, title="จุดกลมใหญ่ = ได้เหรียญรางวัล | เอาเมาส์ชี้เพื่อดู Event การแข่งขัน"
+        color_discrete_map=color_map, title="จุดกลมใหญ่ = ได้เหรียญรางวัล | เอาเมาส์ชี้เพื่อดู Event การแข่งขัน",
+        template="plotly_white"
     )
     fig_ath.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
     fig_ath.update_layout(
