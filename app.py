@@ -267,15 +267,13 @@ st.divider()
 # -----------------------------------------------------------------------------
 st.subheader("👤 Athlete Profile Explorer")
 
-
-
 filtered_names = (
-        df['Name']
-        .dropna()
-        .astype(str)
-        .loc[lambda x: x.str.contains(search_text, case=False, na=False)]
-        .unique()
-    )
+    df['Name']
+    .dropna()
+    .astype(str)
+    .loc[lambda x: x.str.contains(search_text, case=False, na=False)]
+    .unique()
+)
 
 selected_athlete = st.selectbox(
         "Select Athlete:",
