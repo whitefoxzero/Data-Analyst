@@ -164,7 +164,6 @@ if st.session_state.current_page == 'dashboard':
         c1, c2 = st.columns(2)
         with c1:
             count_by_year = df_filtered.groupby(['Year', 'Medal']).size().reset_index(name='Count')
-            # เพิ่ม template="plotly_white" เพื่อบังคับกราฟเป็นโหมดสว่าง
             fig_year = px.bar(count_by_year, x='Year', y='Count', color='Medal', color_discrete_map=color_map, title="สถิติเหรียญรางวัลแบ่งตามปี", barmode='group', template="plotly_white")
             fig_year.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#000000"))
             st.plotly_chart(fig_year, width="stretch")
@@ -173,13 +172,15 @@ if st.session_state.current_page == 'dashboard':
             sport_counts = df_filtered.groupby(['Sport', 'Medal']).size().reset_index(name='Count')
             sport_total = sport_counts.groupby('Sport')['Count'].sum().reset_index().sort_values('Count', ascending=False)
             top_sports = sport_total.head(10)['Sport'].tolist()
-            # เพิ่ม template="plotly_white"
             fig_sport = px.bar(sport_counts[sport_counts['Sport'].isin(top_sports)], x='Sport', y='Count', color='Medal', color_discrete_map=color_map, title="10 กีฬายอดนิยม", category_orders={"Sport": top_sports}, template="plotly_white")
             fig_sport.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#000000"))
             st.plotly_chart(fig_sport, width="stretch")
 
     with tab2:
-        st.subheader("Top 20 นักกีฬาที่ได้เหรียญมากที่สุด")
+        # --- LEADERBOARD ---
+        st.subheader("🏆 Top 20 Athletes (Leaderboard)")
+        
+        # ใช้ df_filtered แทน df เพื่อให้ข้อมูลเชื่อมโยงกับตัวกรองด้านข้าง
         medals_only = df_filtered[df_filtered['Medal'].isin(['gold', 'silver', 'bronze'])]
         
         if medals_only.empty:
@@ -187,18 +188,19 @@ if st.session_state.current_page == 'dashboard':
         else:
             leaderboard = medals_only.groupby('Name')['Medal'].count().reset_index(name='Total Medals').sort_values('Total Medals', ascending=False).head(20)
 
-            col_rank1, col_rank2 = st.columns([1, 1])
+            col_rank1, col_rank2 = st.columns(2)
             with col_rank1:
-                # เพิ่ม template="plotly_white"
-                fig_rank = px.bar(leaderboard, x='Total Medals', y='Name', orientation='h', title="ทำเนียบนักกีฬา (เหรียญรวม)", color='Total Medals', color_continuous_scale='Viridis', template="plotly_white")
+                # แก้ไขการตั้งค่าสีพื้นหลังเพื่อให้มองเห็นชัดเจน (template="plotly_white")
+                fig_rank = px.bar(leaderboard, x='Total Medals', y='Name', orientation='h', title="All-Time Medal Leaders", color='Total Medals', color_continuous_scale='Viridis', template="plotly_white")
                 fig_rank.update_layout(yaxis={'categoryorder':'total ascending'}, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#000000"))
                 st.plotly_chart(fig_rank, width="stretch")
 
             with col_rank2:
-                st.markdown("##### 📊 รายละเอียดเหรียญรางวัล")
+                st.markdown("#### Leaderboard Data (คลิกที่ตารางเพื่อดูโปรไฟล์ 👇)")
                 top_names = leaderboard['Name'].tolist()
                 detailed_leaderboard = pd.crosstab(medals_only[medals_only['Name'].isin(top_names)]['Name'], medals_only['Medal'])
                 
+                # ป้องกันตารางพังถ้ากีฬาบางประเภทไม่มีคนได้เหรียญบางสี
                 for m in ['gold', 'silver', 'bronze']:
                     if m not in detailed_leaderboard: detailed_leaderboard[m] = 0
                     
@@ -207,8 +209,19 @@ if st.session_state.current_page == 'dashboard':
                 detailed_leaderboard = detailed_leaderboard.sort_values('Total', ascending=False)
                 detailed_leaderboard.columns = ['🥇 Gold', '🥈 Silver', '🥉 Bronze', '🏆 Total'] 
 
-                st.dataframe(detailed_leaderboard, use_container_width=True)
-                st.info("💡 หากต้องการดูสถิติเจาะลึกของนักกีฬาในตารางนี้ สามารถพิมพ์ชื่อในช่องค้นหาด้านบนได้เลยครับ")
+                # ตารางแบบ Interactive กดเลือกได้
+                event = st.dataframe(
+                    detailed_leaderboard, 
+                    width="stretch",
+                    on_select="rerun",              
+                    selection_mode="single-row"     
+                )
+
+                if len(event.selection.rows) > 0:
+                    selected_row_index = event.selection.rows[0]
+                    clicked_athlete = detailed_leaderboard.index[selected_row_index]
+                    go_to_athlete(clicked_athlete)
+                    st.rerun()
 
 elif st.session_state.current_page == 'athlete_profile':
     col_back, col_space = st.columns([1, 5])
@@ -257,7 +270,6 @@ elif st.session_state.current_page == 'athlete_profile':
     plot_df['Medal_Rank'] = plot_df['Medal'].map({'gold': 1, 'silver': 2, 'bronze': 3, 'no medal': 4})
     plot_df = plot_df.sort_values(by=['Medal_Rank'], ascending=False)
     
-    # เพิ่ม template="plotly_white"
     fig_ath = px.scatter(
         plot_df, x='Year', y='Sport', color='Medal', size='Marker_Size',
         hover_name='Event', hover_data={'Year': True, 'Sport': False, 'City': True, 'Marker_Size': False, 'Medal_Rank': False},
