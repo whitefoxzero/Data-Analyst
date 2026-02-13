@@ -29,13 +29,22 @@ def go_to_dashboard():
     st.session_state.current_page = 'dashboard'
 
 # -----------------------------------------------------------------------------
-# 3. UI/UX & Custom CSS (ตกแต่งให้คลีนขึ้น)
+# 3. UI/UX & Custom CSS (บังคับตัวหนังสือสีดำสนิท)
 # -----------------------------------------------------------------------------
 st.markdown("""
     <style>
-    html, body, [class*="css"]  { color: #1E1E1E !important; }
-    .stApp { background-color: #F8F9FA; }
+    /* บังคับตัวหนังสือทุกส่วนให้เป็นสีดำสนิท */
+    html, body, [class*="css"], [class*="st-"] { 
+        color: #000000 !important; 
+    }
+    .stApp { 
+        background-color: #F8F9FA; 
+    }
+    h1, h2, h3, h4, h5, h6, p, span, label, div { 
+        color: #000000 !important; 
+    }
     
+    /* กล่องแสดงตัวเลข Metric */
     div[data-testid="stMetric"] {
         background-color: #FFFFFF;
         padding: 15px;
@@ -43,6 +52,11 @@ st.markdown("""
         box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.05);
         border-left: 5px solid #FFD700;
     }
+    div[data-testid="stMetricLabel"], div[data-testid="stMetricValue"] {
+        color: #000000 !important;
+    }
+    
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 20px;
     }
@@ -50,6 +64,12 @@ st.markdown("""
         height: 50px;
         font-size: 18px;
         font-weight: 600;
+        color: #000000 !important;
+    }
+    
+    /* Sidebar */
+    section[data-testid="stSidebar"] * { 
+        color: #000000 !important; 
     }
     </style>
     """, unsafe_allow_html=True)
