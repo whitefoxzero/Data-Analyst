@@ -267,10 +267,9 @@ st.divider()
 # -----------------------------------------------------------------------------
 st.subheader("👤 Athlete Profile Explorer")
 
-search_text = st.text_input("Search Athlete Name:")
 
-if search_text:
-    filtered_names = (
+
+filtered_names = (
         df['Name']
         .dropna()
         .astype(str)
@@ -278,14 +277,10 @@ if search_text:
         .unique()
     )
 
-    selected_athlete = st.selectbox(
+selected_athlete = st.selectbox(
         "Select Athlete:",
         options=[""] + list(filtered_names[:10])
     )
-
-else:
-    st.info("🔎 Type a name to search for an athlete")
-    selected_athlete = None
 
 if selected_athlete:
     ath_df = df[df['Name'] == selected_athlete]
