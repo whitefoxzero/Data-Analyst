@@ -202,7 +202,7 @@ st.markdown("---")
 # SECTION 1: Medal Overview
 # -----------------------------------------------------------------------------
 st.subheader("📊 Global Medal Overview")
-ช
+
 total_gold = df_filtered[df_filtered['Medal'] == 'gold'].shape[0]
 total_silver = df_filtered[df_filtered['Medal'] == 'silver'].shape[0]
 total_bronze = df_filtered[df_filtered['Medal'] == 'bronze'].shape[0]
