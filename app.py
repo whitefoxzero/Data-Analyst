@@ -79,6 +79,11 @@ def load_and_clean_data():
         # 2. ลบคอลัมน์ที่ไม่จำเป็น (Cleaning)
         if 'notes' in df.columns:
             df = df.drop(columns=['notes'])
+        if 'Name' in df.columns:
+            df = df[df['Name'].str.match(
+            r'^[^\W\d_]+(?:[ \.\-][^\W\d_]+)*$', 
+            na=False
+        )]
 
         # 3. จัดการชนิดข้อมูล (Data Types) ให้เหมาะสมและประหยัดหน่วยความจำ
         df['Age'] = pd.to_numeric(df['Age'], errors='coerce')
