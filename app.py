@@ -99,6 +99,7 @@ def load_and_clean_data():
         return pd.DataFrame()
 
 df = load_and_clean_data()
+
 if df.empty: 
     st.stop()
 
