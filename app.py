@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# 2. State Management (ระบบจัดการหน้า สลับหน้าไปมา)
+# 2. State Management (ระบบจัดการหน้า)
 # -----------------------------------------------------------------------------
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 'dashboard'
@@ -29,27 +29,28 @@ def go_to_dashboard():
     st.session_state.current_page = 'dashboard'
 
 # -----------------------------------------------------------------------------
-# 3. UI/UX & Custom CSS
+# 3. UI/UX & Custom CSS (ตกแต่งให้คลีนขึ้น)
 # -----------------------------------------------------------------------------
 st.markdown("""
     <style>
-    html, body, [class*="css"]  { color: #000000 !important; }
-    .stApp { background-color: #FDFBF7; color: #000000 !important; }
-    h1, h2, h3, h4, h5, h6 { color: #000000 !important; }
-    .stMarkdown, .stText, p, span, label { color: #000000 !important; }
+    html, body, [class*="css"]  { color: #1E1E1E !important; }
+    .stApp { background-color: #F8F9FA; }
     
     div[data-testid="stMetric"] {
-        background-color: #F5EFE6;
+        background-color: #FFFFFF;
         padding: 15px;
-        border-radius: 10px;
-        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
-        border: 1px solid #E6DCCD;
+        border-radius: 12px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.05);
+        border-left: 5px solid #FFD700;
     }
-    div[data-testid="stMetricLabel"], div[data-testid="stMetricValue"] {
-        color: #000000 !important;
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 20px;
     }
-    section[data-testid="stSidebar"] * { color: #000000 !important; }
-    .stPlotlyChart * { color: #000000 !important; }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        font-size: 18px;
+        font-weight: 600;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -70,13 +71,9 @@ def load_and_clean_data():
         existing_cat_cols = [col for col in cat_cols if col in df.columns]
         df[existing_cat_cols] = df[existing_cat_cols].astype('category')
 
-        # จัดการ Medal ให้เป็นตัวพิมพ์เล็กทั้งหมด
+        # จัดการ Medal
         df['Medal'] = df['Medal'].astype(str).str.strip().str.lower()
-        df['Medal'] = df['Medal'].replace({
-            'no medal': np.nan,
-                '-': np.nan,
-                'nan': np.nan   # 👈 สำคัญมาก
-                })
+        df['Medal'] = df['Medal'].replace({'no medal': np.nan, '-': np.nan, 'nan': np.nan})
         df['Medal'] = df['Medal'].fillna('no medal')
         df['Medal'] = df['Medal'].astype('category')
 
@@ -102,30 +99,30 @@ def load_and_clean_data():
 df = load_and_clean_data()
 if df.empty: st.stop()
 
-# Color mapping (อิงตามตัวพิมพ์เล็กที่ Clean มา)
+# Color mapping
 color_map = {
     'gold': '#FFD700', 'silver': '#C0C0C0', 
     'bronze': '#CD7F32', 'no medal': '#E0E0E0'
 }
 
 # =============================================================================
-# 5. ROUTING LOGIC (แยกว่าตอนนี้อยู่หน้าไหน)
+# 5. ROUTING LOGIC
 # =============================================================================
 
 if st.session_state.current_page == 'dashboard':
     # -------------------------------------------------------------------------
     # PAGE 1: MAIN DASHBOARD
     # -------------------------------------------------------------------------
-    st.sidebar.header("🎯 Global Filters")
+    st.sidebar.header("🎯 ตัวกรองข้อมูล (Filters)")
     min_year, max_year = int(df['Year'].min()), int(df['Year'].max())
-    year_range = st.sidebar.slider("Select Year Range:", min_year, max_year, (min_year, max_year))
+    year_range = st.sidebar.slider("เลือกช่วงปี:", min_year, max_year, (min_year, max_year))
     
     all_sports = sorted(df['Sport'].dropna().unique())
-    selected_sports = st.sidebar.multiselect("Select Sport(s):", all_sports, default=all_sports[:5])
+    selected_sports = st.sidebar.multiselect("เลือกประเภทกีฬา:", all_sports, default=all_sports[:5])
     if not selected_sports: selected_sports = all_sports
     
     medal_options = ['gold', 'silver', 'bronze', 'no medal']
-    selected_medals = st.sidebar.multiselect("Select Medal Type(s):", medal_options, default=medal_options)
+    selected_medals = st.sidebar.multiselect("เลือกเหรียญรางวัล:", medal_options, default=medal_options)
 
     df_filtered = df[
         (df['Year'] >= year_range[0]) & (df['Year'] <= year_range[1]) &
@@ -134,122 +131,117 @@ if st.session_state.current_page == 'dashboard':
 
     st.title("🏅 Olympic Analytics Dashboard")
     
-    # --- ช่องค้นหานักกีฬา ---
-    st.markdown("### 🔎 ค้นหาโปรไฟล์นักกีฬาเจาะลึก")
-    col_search, col_btn = st.columns([4, 1])
-    with col_search:
-        search_list = df['Name'].dropna().unique()
-        selected_search = st.selectbox("พิมพ์หรือเลือกชื่อนักกีฬา:", options=["-- กรุณาเลือกนักกีฬา --"] + list(search_list))
-    with col_btn:
-        st.markdown("<br>", unsafe_allow_html=True) 
-        if st.button("ดูโปรไฟล์แบบเต็ม 🚀", use_container_width=True):
-            if selected_search != "-- กรุณาเลือกนักกีฬา --":
-                go_to_athlete(selected_search)
-                st.rerun()
-            else:
-                st.warning("โปรดเลือกชื่อนักกีฬาก่อน")
+    # --- ช่องค้นหานักกีฬา (ค้นหาปุ๊บ วาร์ปปั๊บ) ---
+    search_list = df['Name'].dropna().unique()
+    selected_search = st.selectbox("🔎 พิมพ์หรือเลือกชื่อนักกีฬาเพื่อดูสถิติเจาะลึก:", options=["-- กรุณาเลือกนักกีฬา --"] + list(search_list))
+    if selected_search != "-- กรุณาเลือกนักกีฬา --":
+        go_to_athlete(selected_search)
+        st.rerun()
 
     st.markdown("---")
     
-    # --- ภาพรวม ---
-    st.subheader("📊 Global Medal Overview")
-    t_gold = len(df_filtered[df_filtered['Medal'] == 'gold'])
-    t_silver = len(df_filtered[df_filtered['Medal'] == 'silver'])
-    t_bronze = len(df_filtered[df_filtered['Medal'] == 'bronze'])
-    t_none = len(df_filtered[df_filtered['Medal'] == 'no medal'])
-    t_athletes = df_filtered['Name'].nunique()
+    # 🌟 สร้างระบบ TABS เพื่อให้ UI ดูง่าย ไม่ต้องเลื่อนยาวๆ
+    tab1, tab2 = st.tabs(["📊 ภาพรวมสถิติ (Overview)", "🏆 ตารางอันดับนักกีฬา (Leaderboard)"])
 
-    m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("🥇 Total Gold", f"{t_gold:,}")
-    m2.metric("🥈 Total Silver", f"{t_silver:,}")
-    m3.metric("🥉 Total Bronze", f"{t_bronze:,}")
-    m4.metric("🏃‍♂️ Participations", f"{t_none:,}")
-    m5.metric("👥 Unique Athletes", f"{t_athletes:,}")
+    with tab1:
+        st.subheader("ภาพรวมการแข่งขันทั่วโลก")
+        t_gold = len(df_filtered[df_filtered['Medal'] == 'gold'])
+        t_silver = len(df_filtered[df_filtered['Medal'] == 'silver'])
+        t_bronze = len(df_filtered[df_filtered['Medal'] == 'bronze'])
+        t_none = len(df_filtered[df_filtered['Medal'] == 'no medal'])
+        t_athletes = df_filtered['Name'].nunique()
 
-    c1, c2 = st.columns(2)
-    with c1:
-        count_by_year = df_filtered.groupby(['Year', 'Medal']).size().reset_index(name='Count')
-        fig_year = px.bar(count_by_year, x='Year', y='Count', color='Medal', color_discrete_map=color_map, title="Medals per Year", barmode='group')
-        fig_year.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_year, width="stretch")
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("🥇 เหรียญทอง", f"{t_gold:,}")
+        m2.metric("🥈 เหรียญเงิน", f"{t_silver:,}")
+        m3.metric("🥉 เหรียญทองแดง", f"{t_bronze:,}")
+        m4.metric("🏃‍♂️ เข้าร่วม (ไม่ได้รับเหรียญ)", f"{t_none:,}")
+        m5.metric("👥 จำนวนนักกีฬา", f"{t_athletes:,}")
 
-    with c2:
-        sport_counts = df_filtered.groupby(['Sport', 'Medal']).size().reset_index(name='Count')
-        sport_total = sport_counts.groupby('Sport')['Count'].sum().reset_index().sort_values('Count', ascending=False)
-        top_sports = sport_total.head(10)['Sport'].tolist()
-        fig_sport = px.bar(sport_counts[sport_counts['Sport'].isin(top_sports)], x='Sport', y='Count', color='Medal', color_discrete_map=color_map, title="Top 10 Sports by Activity", category_orders={"Sport": top_sports})
-        fig_sport.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_sport, width="stretch")
+        st.markdown("<br>", unsafe_allow_html=True)
 
-    st.divider()
+        c1, c2 = st.columns(2)
+        with c1:
+            count_by_year = df_filtered.groupby(['Year', 'Medal']).size().reset_index(name='Count')
+            fig_year = px.bar(count_by_year, x='Year', y='Count', color='Medal', color_discrete_map=color_map, title="สถิติเหรียญรางวัลแบ่งตามปี", barmode='group')
+            fig_year.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_year, width="stretch")
 
-    # --- LEADERBOARD ---
-    st.subheader("🏆 Top 20 Athletes (Leaderboard)")
-    medals_only = df[df['Medal'].isin(['gold', 'silver', 'bronze'])]
-    leaderboard = medals_only.groupby('Name')['Medal'].count().reset_index(name='Total Medals').sort_values('Total Medals', ascending=False).head(20)
+        with c2:
+            sport_counts = df_filtered.groupby(['Sport', 'Medal']).size().reset_index(name='Count')
+            sport_total = sport_counts.groupby('Sport')['Count'].sum().reset_index().sort_values('Count', ascending=False)
+            top_sports = sport_total.head(10)['Sport'].tolist()
+            fig_sport = px.bar(sport_counts[sport_counts['Sport'].isin(top_sports)], x='Sport', y='Count', color='Medal', color_discrete_map=color_map, title="10 กีฬายอดนิยม", category_orders={"Sport": top_sports})
+            fig_sport.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_sport, width="stretch")
 
-    col_rank1, col_rank2 = st.columns(2)
-    with col_rank1:
-        fig_rank = px.bar(leaderboard, x='Total Medals', y='Name', orientation='h', title="All-Time Medal Leaders", color='Total Medals', color_continuous_scale='Viridis')
-        fig_rank.update_layout(yaxis={'categoryorder':'total ascending'}, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_rank, width="stretch")
+    with tab2:
+        st.subheader("Top 20 นักกีฬาที่ได้เหรียญมากที่สุด")
+        medals_only = df[df['Medal'].isin(['gold', 'silver', 'bronze'])]
+        leaderboard = medals_only.groupby('Name')['Medal'].count().reset_index(name='Total Medals').sort_values('Total Medals', ascending=False).head(20)
 
-    with col_rank2:
-        st.markdown("#### Leaderboard Data (คลิกที่ตารางเพื่อดูโปรไฟล์ 👇)")
-        top_names = leaderboard['Name'].tolist()
-        detailed_leaderboard = pd.crosstab(medals_only[medals_only['Name'].isin(top_names)]['Name'], medals_only['Medal'])
-        
-        # ป้องกันตารางพังถ้ากีฬาบางประเภทไม่มีคนได้เหรียญบางสี
-        for m in ['gold', 'silver', 'bronze']:
-            if m not in detailed_leaderboard: detailed_leaderboard[m] = 0
+        col_rank1, col_rank2 = st.columns([1, 1])
+        with col_rank1:
+            fig_rank = px.bar(leaderboard, x='Total Medals', y='Name', orientation='h', title="ทำเนียบนักกีฬา (เหรียญรวม)", color='Total Medals', color_continuous_scale='Viridis')
+            fig_rank.update_layout(yaxis={'categoryorder':'total ascending'}, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_rank, width="stretch")
+
+        with col_rank2:
+            st.markdown("##### 🖱️ คลิกที่ตารางเพื่อดูโปรไฟล์เจาะลึก")
+            top_names = leaderboard['Name'].tolist()
+            detailed_leaderboard = pd.crosstab(medals_only[medals_only['Name'].isin(top_names)]['Name'], medals_only['Medal'])
             
-        detailed_leaderboard = detailed_leaderboard[['gold', 'silver', 'bronze']] 
-        detailed_leaderboard['Total'] = detailed_leaderboard.sum(axis=1)
-        detailed_leaderboard = detailed_leaderboard.sort_values('Total', ascending=False)
-        detailed_leaderboard.columns = ['🥇 Gold', '🥈 Silver', '🥉 Bronze', '🏆 Total'] 
+            for m in ['gold', 'silver', 'bronze']:
+                if m not in detailed_leaderboard: detailed_leaderboard[m] = 0
+                
+            detailed_leaderboard = detailed_leaderboard[['gold', 'silver', 'bronze']] 
+            detailed_leaderboard['Total'] = detailed_leaderboard.sum(axis=1)
+            detailed_leaderboard = detailed_leaderboard.sort_values('Total', ascending=False)
+            detailed_leaderboard.columns = ['🥇 Gold', '🥈 Silver', '🥉 Bronze', '🏆 Total'] 
 
-        # ตารางแบบ Interactive กดเลือกได้
-        event = st.dataframe(
-            detailed_leaderboard, 
-            width="stretch",
-            on_select="rerun",              
-            selection_mode="single-row"     
-        )
+            event = st.dataframe(
+                detailed_leaderboard, 
+                width="stretch",
+                on_select="rerun",              
+                selection_mode="single-row"     
+            )
 
-        if len(event.selection.rows) > 0:
-            selected_row_index = event.selection.rows[0]
-            clicked_athlete = detailed_leaderboard.index[selected_row_index]
-            go_to_athlete(clicked_athlete)
-            st.rerun()
+            if len(event.selection.rows) > 0:
+                selected_row_index = event.selection.rows[0]
+                clicked_athlete = detailed_leaderboard.index[selected_row_index]
+                go_to_athlete(clicked_athlete)
+                st.rerun()
 
 elif st.session_state.current_page == 'athlete_profile':
     # -------------------------------------------------------------------------
     # PAGE 2: ATHLETE PROFILE PAGE
     # -------------------------------------------------------------------------
-    if st.button("🔙 กลับไปหน้า Dashboard หลัก"):
-        go_to_dashboard()
-        st.rerun()
+    col_back, col_space = st.columns([1, 5])
+    with col_back:
+        if st.button("🔙 กลับไปหน้าหลัก", use_container_width=True):
+            go_to_dashboard()
+            st.rerun()
 
     athlete_name = st.session_state.selected_athlete
     ath_df = df[df['Name'] == athlete_name]
     latest_ath = ath_df.sort_values('Year', ascending=False).iloc[0]
 
-    st.markdown(f"## 👤 Athlete Profile: **{athlete_name}**")
+    st.markdown(f"## 👤 สถิตินักกีฬา: **{athlete_name}**")
     st.markdown("---")
 
     # --- ข้อมูลกายภาพและสังกัด ---
     p1, p2, p3, p4, p5, p6 = st.columns(6)
-    p1.metric("Sex", latest_ath['Sex'])
-    p2.metric("Latest Age", f"{int(latest_ath['Age'])}" if pd.notna(latest_ath['Age']) else "N/A")
-    p3.metric("Height", f"{int(latest_ath['Height'])} cm" if pd.notna(latest_ath['Height']) else "N/A")
-    p4.metric("Weight", f"{int(latest_ath['Weight'])} kg" if pd.notna(latest_ath['Weight']) else "N/A")
-    p5.metric("Team", latest_ath['Team'])
-    p6.metric("Region", latest_ath['region'] if 'region' in df.columns and pd.notna(latest_ath['region']) else "N/A")
+    p1.metric("เพศ", latest_ath['Sex'])
+    p2.metric("อายุล่าสุดตอนแข่ง", f"{int(latest_ath['Age'])} ปี" if pd.notna(latest_ath['Age']) else "N/A")
+    p3.metric("ส่วนสูง", f"{int(latest_ath['Height'])} cm" if pd.notna(latest_ath['Height']) else "N/A")
+    p4.metric("น้ำหนัก", f"{int(latest_ath['Weight'])} kg" if pd.notna(latest_ath['Weight']) else "N/A")
+    p5.metric("ทีม/ประเทศ", latest_ath['Team'])
+    p6.metric("ภูมิภาค", latest_ath['region'] if 'region' in df.columns and pd.notna(latest_ath['region']) else "N/A")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # --- สรุปเหรียญทั้งหมดของนักกีฬาคนนี้ ---
-    st.markdown("### 🏆 Career Summary")
+    # --- สรุปเหรียญทั้งหมด ---
+    st.markdown("### 🏆 สรุปผลงานตลอดชีพ (Career Summary)")
     ath_gold = len(ath_df[ath_df['Medal'] == 'gold'])
     ath_silver = len(ath_df[ath_df['Medal'] == 'silver'])
     ath_bronze = len(ath_df[ath_df['Medal'] == 'bronze'])
@@ -257,34 +249,57 @@ elif st.session_state.current_page == 'athlete_profile':
     unique_years = ath_df['Year'].nunique()
 
     a1, a2, a3, a4, a5 = st.columns(5)
-    a1.metric("🥇 Total Gold", ath_gold)
-    a2.metric("🥈 Total Silver", ath_silver)
-    a3.metric("🥉 Total Bronze", ath_bronze)
-    a4.metric("🏅 Total Medals", total_medals)
-    a5.metric("📅 Olympic Games Attended", unique_years)
+    a1.metric("🥇 เหรียญทอง", ath_gold)
+    a2.metric("🥈 เหรียญเงิน", ath_silver)
+    a3.metric("🥉 เหรียญทองแดง", ath_bronze)
+    a4.metric("🏅 รวมเหรียญที่ได้", total_medals)
+    a5.metric("📅 จำนวนปีที่ลงแข่ง", unique_years)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- กราฟและประวัติ ---
-    r1, r2 = st.columns([3, 2])
-    with r1:
-        st.markdown("#### 📈 Medal History Timeline")
-        ath_hist = ath_df.groupby(['Year', 'Medal']).size().reset_index(name='Count')
-        
-        # จัดการกราฟไทม์ไลน์
-        if unique_years == 1:
-            fig_ath = px.scatter(ath_hist[ath_hist['Medal'] != 'no medal'], x='Year', y='Count', color='Medal', size='Count', color_discrete_map=color_map, title="Medals Won (Single Year)")
-        else:
-            fig_ath = px.line(ath_hist[ath_hist['Medal'] != 'no medal'], x='Year', y='Count', color='Medal', markers=True, color_discrete_map=color_map, title="Medals Won Over Years")
-        
-        fig_ath.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(dtick=4))
-        st.plotly_chart(fig_ath, width="stretch")
+    # --- กราฟรูปแบบใหม่ (ปี vs กีฬา) ตามที่คุณต้องการ ---
+    st.markdown("### 📈 ไทม์ไลน์: ปีที่แข่งขัน และกีฬาที่ได้เหรียญ")
+    
+    # เตรียมข้อมูลสำหรับวาดกราฟ Scatter
+    plot_df = ath_df.copy()
+    
+    # สร้างคอลัมน์กำหนดขนาดจุด (ได้เหรียญ = จุดใหญ่, ไม่ได้เหรียญ = จุดเล็ก)
+    plot_df['Marker_Size'] = plot_df['Medal'].apply(lambda m: 12 if m in ['gold', 'silver', 'bronze'] else 4)
+    # จัดเรียงให้จุดที่ได้เหรียญอยู่ด้านบน (จะได้ไม่โดนจุดเทาทับ)
+    plot_df['Medal_Rank'] = plot_df['Medal'].map({'gold': 1, 'silver': 2, 'bronze': 3, 'no medal': 4})
+    plot_df = plot_df.sort_values(by=['Medal_Rank'], ascending=False)
+    
+    fig_ath = px.scatter(
+        plot_df,
+        x='Year',
+        y='Sport',
+        color='Medal',
+        size='Marker_Size',
+        hover_name='Event',
+        hover_data={
+            'Year': True, 
+            'Sport': False, 
+            'City': True,
+            'Marker_Size': False,
+            'Medal_Rank': False
+        },
+        color_discrete_map=color_map,
+        title="จุดกลมใหญ่ = ได้เหรียญรางวัล | เอาเมาส์ชี้เพื่อดู Event การแข่งขัน"
+    )
+    fig_ath.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
+    fig_ath.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", 
+        plot_bgcolor="rgba(0,0,0,0)", 
+        xaxis=dict(dtick=4, title="ปีที่แข่งขัน (Year)"),
+        yaxis=dict(title="ประเภทกีฬา (Sport)"),
+        height=400
+    )
+    st.plotly_chart(fig_ath, width="stretch")
 
-    with r2:
-        st.markdown("#### 📝 Detailed Event Log")
-        hist_table = ath_df[['Year', 'Season', 'City', 'Sport', 'Event', 'Medal']].sort_values('Year', ascending=False)
-        st.dataframe(hist_table, hide_index=True, width="stretch", height=350)
+    st.markdown("#### 📝 ประวัติการลงแข่งทั้งหมด (Detailed Event Log)")
+    hist_table = ath_df[['Year', 'Season', 'City', 'Sport', 'Event', 'Medal']].sort_values('Year', ascending=False)
+    st.dataframe(hist_table, hide_index=True, width="stretch", height=300)
 
-# Footer ทั่วไป
+# Footer
 st.markdown("---")
 st.markdown("© 2026 Olympic Analytics Dashboard | Built with Streamlit")
