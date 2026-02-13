@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# 2. State Management (ระบบจัดการหน้า สลับหน้าไปมา)
+# 2. State Management (ระบบจัดการหน้า)
 # -----------------------------------------------------------------------------
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 'dashboard'
@@ -105,7 +105,7 @@ color_map = {
 }
 
 # =============================================================================
-# 5. ROUTING LOGIC (แยกว่าตอนนี้อยู่หน้าไหน)
+# ROUTING LOGIC
 # =============================================================================
 
 if st.session_state.current_page == 'dashboard':
@@ -130,14 +130,14 @@ if st.session_state.current_page == 'dashboard':
 
     st.title("🏅 Olympic Analytics Dashboard")
     
-    # --- ช่องค้นหานักกีฬา ---
+    # --- ค้นหานักกีฬาเพื่อไปยังหน้าโปรไฟล์ ---
     st.markdown("### 🔎 ค้นหาโปรไฟล์นักกีฬาเจาะลึก")
     col_search, col_btn = st.columns([4, 1])
     with col_search:
         search_list = df['Name'].dropna().unique()
         selected_search = st.selectbox("พิมพ์หรือเลือกชื่อนักกีฬา:", options=["-- กรุณาเลือกนักกีฬา --"] + list(search_list))
     with col_btn:
-        st.markdown("<br>", unsafe_allow_html=True) 
+        st.markdown("<br>", unsafe_allow_html=True) # เว้นบรรทัดให้ปุ่มตรงกับกล่องข้อความ
         if st.button("ดูโปรไฟล์แบบเต็ม 🚀", use_container_width=True):
             if selected_search != "-- กรุณาเลือกนักกีฬา --":
                 go_to_athlete(selected_search)
@@ -191,32 +191,18 @@ if st.session_state.current_page == 'dashboard':
         st.plotly_chart(fig_rank, width="stretch")
 
     with col_rank2:
-        st.markdown("#### Leaderboard Data (คลิกที่ตารางเพื่อดูโปรไฟล์ 👇)")
         top_names = leaderboard['Name'].tolist()
+        # ใช้ pd.crosstab เพื่อให้ตารางออกมาสวยงาม ไม่มี Multi-index ซ้อนกัน
         detailed_leaderboard = pd.crosstab(medals_only[medals_only['Name'].isin(top_names)]['Name'], medals_only['Medal'])
-        
-        # ป้องกันตารางพังถ้ากีฬาบางประเภทไม่มีคนได้เหรียญบางสี
+        # ตรวจสอบว่ามีคอลัมน์ครบไหม
         for m in ['gold', 'silver', 'bronze']:
             if m not in detailed_leaderboard: detailed_leaderboard[m] = 0
             
-        detailed_leaderboard = detailed_leaderboard[['gold', 'silver', 'bronze']] 
+        detailed_leaderboard = detailed_leaderboard[['gold', 'silver', 'bronze']] # จัดเรียงคอลัมน์
         detailed_leaderboard['Total'] = detailed_leaderboard.sum(axis=1)
         detailed_leaderboard = detailed_leaderboard.sort_values('Total', ascending=False)
-        detailed_leaderboard.columns = ['🥇 Gold', '🥈 Silver', '🥉 Bronze', '🏆 Total'] 
-
-        # ตารางแบบ Interactive กดเลือกได้
-        event = st.dataframe(
-            detailed_leaderboard, 
-            width="stretch",
-            on_select="rerun",              
-            selection_mode="single-row"     
-        )
-
-        if len(event.selection.rows) > 0:
-            selected_row_index = event.selection.rows[0]
-            clicked_athlete = detailed_leaderboard.index[selected_row_index]
-            go_to_athlete(clicked_athlete)
-            st.rerun()
+        detailed_leaderboard.columns = ['🥇 Gold', '🥈 Silver', '🥉 Bronze', '🏆 Total'] # เปลี่ยนชื่อให้น่าอ่าน
+        st.dataframe(detailed_leaderboard, width="stretch")
 
 elif st.session_state.current_page == 'athlete_profile':
     # -------------------------------------------------------------------------
@@ -265,13 +251,13 @@ elif st.session_state.current_page == 'athlete_profile':
     r1, r2 = st.columns([3, 2])
     with r1:
         st.markdown("#### 📈 Medal History Timeline")
+        # นับเหรียญและประเภทตามปี
         ath_hist = ath_df.groupby(['Year', 'Medal']).size().reset_index(name='Count')
-        
-        # จัดการกราฟไทม์ไลน์
+        # เอาเฉพาะปีที่มีการแข่งจริงๆ ของนักกีฬาคนนี้
+        fig_ath = px.line(ath_hist[ath_hist['Medal'] != 'no medal'], x='Year', y='Count', color='Medal', markers=True, color_discrete_map=color_map, title="Medals Won Over Years")
+        # เปลี่ยนเป็น Scatter สำหรับคนที่มีแค่ปีเดียว
         if unique_years == 1:
             fig_ath = px.scatter(ath_hist[ath_hist['Medal'] != 'no medal'], x='Year', y='Count', color='Medal', size='Count', color_discrete_map=color_map, title="Medals Won (Single Year)")
-        else:
-            fig_ath = px.line(ath_hist[ath_hist['Medal'] != 'no medal'], x='Year', y='Count', color='Medal', markers=True, color_discrete_map=color_map, title="Medals Won Over Years")
         
         fig_ath.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(dtick=4))
         st.plotly_chart(fig_ath, width="stretch")
