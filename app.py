@@ -267,8 +267,6 @@ st.divider()
 # -----------------------------------------------------------------------------
 st.subheader("👤 Athlete Profile Explorer")
 
-all_athlete_names = sorted(df['Name'].unique())
-
 search_text = st.text_input("Search Athlete Name:")
 
 filtered_names = [name for name in all_athlete_names 
