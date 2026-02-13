@@ -97,7 +97,8 @@ def load_and_clean_data():
         return pd.DataFrame()
 
 df = load_and_clean_data()
-if df.empty: st.stop()
+if df.empty: 
+    st.stop()
 
 # Color mapping
 color_map = {
