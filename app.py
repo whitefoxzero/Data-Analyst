@@ -72,7 +72,11 @@ def load_and_clean_data():
 
         # จัดการ Medal ให้เป็นตัวพิมพ์เล็กทั้งหมด
         df['Medal'] = df['Medal'].astype(str).str.strip().str.lower()
-        df['Medal'] = df['Medal'].replace({'no medal': np.nan, '-': np.nan , 'nan': np.nan})
+        df['Medal'] = df['Medal'].replace({
+            'no medal': np.nan,
+                '-': np.nan,
+                'nan': np.nan   # 👈 สำคัญมาก
+                })
         df['Medal'] = df['Medal'].fillna('no medal')
         df['Medal'] = df['Medal'].astype('category')
 
